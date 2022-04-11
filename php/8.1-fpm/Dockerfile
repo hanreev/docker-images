@@ -10,12 +10,12 @@ RUN apt-get update \
   libjpeg62-turbo-dev \
   libwebp-dev \
   libfreetype6-dev \
-  && apt-mark manual \
   libzip4 \
   libpng16-16 \
   libjpeg62-turbo \
   libwebp6 \
-  libfreetype6
+  libfreetype6 \
+  supervisor
 
 RUN docker-php-ext-install pdo_mysql zip
 
@@ -26,7 +26,7 @@ RUN docker-php-ext-configure gd \
   && docker-php-ext-install gd
 
 RUN if [ ! -z "${pgsql}" ]; then \
-  apt-get install -y libpq-dev && apt-mark manual libpq5; \
+  apt-get install -y libpq-dev libpq5; \
   docker-php-ext-install pgsql pdo_pgsql; \
   apt-get purge -y libpq-dev; \
   fi
@@ -42,9 +42,17 @@ RUN apt-get purge -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 WORKDIR /var/www
 
-RUN chown -R www-data:www-data /var/www
+# COPY . /var/www
+
+RUN chown -R www-data:www-data /var/www \
+  && chown -R www-data:www-data /var/log/supervisor
+
+EXPOSE 9000
 
 USER www-data
 
