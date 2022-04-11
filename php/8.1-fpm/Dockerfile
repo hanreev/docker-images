@@ -15,6 +15,7 @@ RUN apt-get update \
   libjpeg62-turbo \
   libwebp6 \
   libfreetype6 \
+  nginx \
   supervisor
 
 RUN docker-php-ext-install pdo_mysql zip
@@ -47,13 +48,17 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 WORKDIR /var/www
 
-# COPY . /var/www
+COPY php.ini /usr/local/etc/php/
+COPY nginx/ /etc/nginx/
 
-RUN chown -R www-data:www-data /var/www \
-  && chown -R www-data:www-data /var/log/supervisor
+# Copy project & supervisor config
+COPY --chown=www-data:www-data app/ /var/www/
+COPY supervisor/ /etc/
 
-EXPOSE 9000
+# Install dependencies
+RUN composer install \
+  && php artisan storage:link
 
-USER www-data
+EXPOSE 8000
 
-CMD [ "bash" ]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
